@@ -2,6 +2,7 @@
 import json
 import os
 import string
+from urllib3.exceptions import MaxRetryError
 
 # external
 from canvasapi import Canvas
@@ -262,9 +263,15 @@ def download_submission_attachments(course, course_view):
                                         "_" + attachment.filename)
                 if not os.path.exists(filepath):
                     print('Downloading attachment: {}'.format(filepath))
-                    r = requests.get(attachment.url, allow_redirects=True)
-                    with open(filepath, 'wb') as f:
-                        f.write(r.content)
+                    try:
+                        r = requests.get(attachment.url, allow_redirects=True)
+                    except MaxRetryError:
+                        print('***MaxRetryError***: {}'.format(filepath))
+                    except ConnectionError:
+                        print('***ConnectionError***: {}'.format(filepath))
+                    else:
+                        with open(filepath, 'wb') as f:
+                            f.write(r.content)
                 else:
                     print('File already exists: {}'.format(filepath))
 
